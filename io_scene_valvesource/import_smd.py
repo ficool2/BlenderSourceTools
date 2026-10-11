@@ -533,12 +533,15 @@ class SmdImporter(bpy.types.Operator, Logger):
 				if self.properties.rotModeBones and bone.name not in self.existingBones:
 					pose_bone.rotation_mode = smd.rotMode
 
-			if source_rotations:
-				ops.object.mode_set(mode='OBJECT')
-				for name, rotation in source_rotations.items():
-					bone = smd.a.data.bones[name]
-					bone.vs.source_rotation = rotation
+			ops.object.mode_set(mode='OBJECT')
+			for name in [b.name for b in keyframes.keys() if b.name not in self.existingBones]:
+				bone = smd.a.data.bones[name]
+				rotation = source_rotations.get(name)
 
+				# always store a value cus bones without one inherit their parent's!
+				bone.vs.source_rotation = rotation if rotation is not None else Quaternion()
+
+				if rotation is not None:
 					for child in smd.a.children:
 						if child.parent_type == 'BONE' and child.parent_bone == name:
 							child.matrix_parent_inverse = Matrix.Translation((0,-bone.length,0)) @ rotation.to_matrix().to_4x4() @ child.matrix_parent_inverse

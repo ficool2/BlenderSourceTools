@@ -440,6 +440,8 @@ def getUpAxisMat(axis):
 		raise AttributeError("getUpAxisMat got invalid axis argument '{}'".format(axis))
 
 def getSourceBoneRotation(bone : bpy.types.Bone) -> Matrix:
+	while bone.parent and not bone.vs.is_property_set("source_rotation"):
+		bone = bone.parent
 	return bone.vs.source_rotation.to_matrix().to_4x4()
 
 def getSourceBoneMatrix(posebone : bpy.types.PoseBone) -> Matrix:
