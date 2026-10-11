@@ -147,7 +147,7 @@ class ValveSource_ObjectProps(ExportableProps,PropertyGroup):
 	triangulate : BoolProperty(name=get_id("triangulate"),description=get_id("triangulate_tip"),default=False)
 
 class ValveSource_ArmatureProps(PropertyGroup):
-	implicit_zero_bone : BoolProperty(name=get_id("dummy_bone"),default=True,description=get_id("dummy_bone_tip"))
+	implicit_zero_bone : BoolProperty(name=get_id("dummy_bone"),default=False,description=get_id("dummy_bone_tip"))
 	arm_modes = (
 		('CURRENT',get_id("action_slot_current"),get_id("action_slot_selection_current_tip")),
 		('FILTERED',get_id("slot_filter"),get_id("slot_filter_tip")),
