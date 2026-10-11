@@ -354,7 +354,7 @@ class SmdExporter(bpy.types.Operator, Logger):
 
 		if type(id) == Collection:
 			group_vertex_maps = valvesource_vertex_maps(id)
-			for i, ob in enumerate([ob for ob in id.objects if ob.vs.export and ob.session_uid in State.exportableObjects]):
+			for i, ob in enumerate([ob for ob in id.objects if ob.vs.export and session_uid(ob) in State.exportableObjects]):
 				bpy.context.window_manager.progress_update(i / len(id.objects))
 				if ob.type == 'META':
 					ob = find_basis_metaball(ob)
@@ -1103,6 +1103,7 @@ class SmdExporter(bpy.types.Operator, Logger):
 				face_index = 0
 				ob = bake.object
 				data = ob.data
+				calc_loop_normals(data)
 
 				uv_loop = data.uv_layers.active.data
 
@@ -1203,6 +1204,7 @@ class SmdExporter(bpy.types.Operator, Logger):
 			for bake in [bake for bake in bake_results if bake.object.type != 'ARMATURE']:
 				bake.offset = vert_id
 				verts = bake.object.data.vertices
+				calc_loop_normals(bake.object.data)
 				for loop in [bake.object.data.loops[l] for poly in bake.object.data.polygons for l in poly.loop_indices]:
 					self.smd_file.write(_makeVertLine(vert_id,verts[loop.vertex_index].co,loop.normal))
 					vert_id += 1
@@ -1214,6 +1216,7 @@ class SmdExporter(bpy.types.Operator, Logger):
 				for bake in [bake for bake in bake_results if bake.object.type != 'ARMATURE']:
 					shape = bake.shapes.get(shape_name)
 					if not shape: continue
+					calc_loop_normals(shape)
 					
 					vert_index = bake.offset
 					mesh_verts = bake.object.data.vertices
@@ -1269,6 +1272,7 @@ skeleton
 		for frame, vca_ob in enumerate(vca):
 			self.smd_file.write("time {}\n".format(frame))
 
+			calc_loop_normals(vca_ob.data)
 			self.smd_file.writelines(["{} {} {}\n".format(loop.index, getSmdVec(vca_ob.data.vertices[loop.vertex_index].co), getSmdVec(loop.normal)) for loop in vca_ob.data.loops])
 			
 			if two_percent and frame % two_percent == 0:
@@ -1471,6 +1475,8 @@ skeleton
 			
 			ob = bake.object
 			assert(isinstance(ob.data, bpy.types.Mesh))
+			for mesh in [ob.data, *bake.shapes.values()]:
+				calc_loop_normals(mesh)
 			
 			vertex_data = dm.add_element("bind","DmeVertexData",id=bake.name+"verts")
 			
@@ -1557,8 +1563,7 @@ skeleton
 				vert.select = False
 				
 				if bake.shapes and bake.balance_vg:
-					try: balance[vert.index] = bake.balance_vg.weight(vert.index)
-					except: pass
+					balance[vert.index] = next((group.weight for group in vert.groups if group.group == bake.balance_vg.index), 0.0)
 				
 				if have_weightmap:
 					weights = [0.0] * jointCount
@@ -1818,6 +1823,7 @@ skeleton
 							for shape_vert in shape.vertices:
 								shape_vert.co -= ob.data.vertices[shape_vert.index].co - corrective_target.vertices[shape_vert.index].co
 
+					calc_loop_normals(shape)
 					for ob_loop in ob.data.loops:
 						shape_loop = shape.loops[ob_loop.index]
 						norm = shape_loop.normal
@@ -1889,6 +1895,7 @@ skeleton
 					shape_norms = []
 					shape_normIndices = []
 
+					calc_loop_normals(vca_ob.data)
 					for shape_loop in vca_ob.data.loops:
 						shape_vert = vca_ob.data.vertices[shape_loop.vertex_index]
 						ob_loop = ob.data.loops[shape_loop.index]

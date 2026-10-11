@@ -22,7 +22,7 @@ bl_info = {
 	"name": "Blender Source Tools",
 	"author": "Tom Edwards",
 	"version": (3, 4, 3),
-	"blender": (4, 1, 0),
+	"blender": (3, 1, 0),
 	"category": "Import-Export",
 	"location": "File > Import/Export, Scene properties",
 	"wiki_url": "http://steamcommunity.com/groups/BlenderSourceTools",
@@ -59,7 +59,7 @@ class ValveSource_Exportable(bpy.types.PropertyGroup):
 	def item(self) -> bpy.types.Object | bpy.types.Collection: return self.obj or self.collection
 
 	@property
-	def session_uid(self): return self.item.session_uid
+	def session_uid(self): return session_uid(self.item)
 
 def menu_func_import(self, context):
 	self.layout.operator(import_smd.SmdImporter.bl_idname, text=get_id("import_menuitem", True))

@@ -779,7 +779,7 @@ class SmdImporter(bpy.types.Operator, Logger):
 
 			smd.m.show_wire = smd.jobType == PHYS
 
-			md.normals_split_custom_set(norms)
+			set_custom_loop_normals(md, norms)
 
 			if smd.upAxis == 'Y':
 				md.transform(rx90)
@@ -1587,7 +1587,7 @@ class SmdImporter(bpy.types.Operator, Logger):
 
 					# Normals
 					normalsLayer = ob.data.attributes[normalsLayerName]
-					ob.data.normals_split_custom_set([value.vector for value in normalsLayer.data])
+					set_custom_loop_normals(ob.data, [value.vector for value in normalsLayer.data])
 					del normalsLayer
 					ob.data.attributes.remove(ob.data.attributes[normalsLayerName])
 
