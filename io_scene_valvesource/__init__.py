@@ -189,7 +189,21 @@ class ValveSource_CurveProps(ShapeTypeProps,CurveTypeProps,PropertyGroup):
 class ValveSource_TextProps(CurveTypeProps,PropertyGroup):
 	pass
 
+class ValveSource_Preferences(bpy.types.AddonPreferences):
+	bl_idname = __package__
+
+	# last used import options
+	__annotations__ = { name: import_smd.SmdImporter.__annotations__[name] for name in import_smd.SmdImporter.saved_options }
+
+	def draw(self, context):
+		col = self.layout.column()
+		col.use_property_split = True
+		col.label(text="Import Defaults")
+		for name in import_smd.SmdImporter.saved_options:
+			col.prop(self, name)
+
 _classes = (
+	ValveSource_Preferences,
 	ValveSource_Exportable,
 	ValveSource_SceneProps,
 	ValveSource_VertexAnimation,

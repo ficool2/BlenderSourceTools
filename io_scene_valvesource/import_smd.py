@@ -58,6 +58,9 @@ class SmdImporter(bpy.types.Operator, Logger):
 	rotModeBones : BoolProperty(name=get_id("importer_rotmode_bones"),description=get_id("importer_rotmode_bones_tip"),default=False)
 	boneMode : EnumProperty(name=get_id("importer_bonemode"),items=(('NONE','Default',''),('ARROWS','Arrows',''),('SPHERE','Sphere',''),('CHILDREN','Point at Children','')),default='SPHERE',description=get_id("importer_bonemode_tip"))
 	armatureDisplay : EnumProperty(name=get_id("importer_armature_display"),items=(('STICK','Stick',''),('OCTAHEDRAL','Octahedral','')),default='STICK',description=get_id("importer_armature_display_tip"))
+
+	# saved options
+	saved_options = ('doAnim','createCollections','makeCamera','append','rotMode','rotModeBones','boneMode','armatureDisplay')
 	
 	def __init__(self, *args, **kwargs):
 		bpy.types.Operator.__init__(self, *args, **kwargs)
@@ -68,6 +71,15 @@ class SmdImporter(bpy.types.Operator, Logger):
 		pre_eem = context.preferences.edit.use_enter_edit_mode
 		pre_append = self.append
 		context.preferences.edit.use_enter_edit_mode = False
+
+		if getattr(self, "save_options", False):
+			self.save_options = False
+			prefs = self.getPreferences(context)
+			for name in self.saved_options if prefs else ():
+				value = getattr(self.properties, name)
+				if getattr(prefs, name) != value:
+					setattr(prefs, name, value)
+					context.preferences.is_dirty = True
 
 		self.existingBones = [] # bones which existed before importing began
 		self.num_files_imported = 0
@@ -118,8 +130,16 @@ class SmdImporter(bpy.types.Operator, Logger):
 	def invoke(self, context, event):
 		if not self.properties.is_property_set("upAxis"):
 			self.properties.upAxis = context.scene.vs.up_axis
+		prefs = self.getPreferences(context)
+		for name in self.saved_options if prefs else ():
+			setattr(self.properties, name, getattr(prefs, name))
+		self.save_options = True
 		bpy.context.window_manager.fileselect_add(self)
 		return {'RUNNING_MODAL'}
+
+	def getPreferences(self, context):
+		addon = context.preferences.addons.get(__package__)
+		return addon.preferences if addon else None
 
 	def ensureAnimationBonesValidated(self):
 		if self.smd.jobType == ANIM and self.append == 'APPEND' and (hasattr(self.smd,"a") or self.findArmature()):
