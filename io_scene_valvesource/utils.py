@@ -799,7 +799,7 @@ class QcInfo:
 class KeyFrame:
 	def __init__(self):
 		self.frame = None
-		self.pos = self.rot = False
+		self.pos = self.rot = self.scale = False
 		self.matrix = Matrix()
 
 class SMD_OT_LaunchHLMV(bpy.types.Operator):

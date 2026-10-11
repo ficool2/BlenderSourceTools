@@ -387,6 +387,7 @@ class SmdImporter(bpy.types.Operator, Logger):
 		num_frames = 0
 		keyframes = collections.defaultdict(list)
 		phantom_keyframes = collections.defaultdict(list)	# bones that aren't in the reference skeleton
+		scaled_bones = set()
 		
 		for line in smd.file:
 			if smdBreak(line):
@@ -416,11 +417,17 @@ class SmdImporter(bpy.types.Operator, Logger):
 			keyframe.frame = num_frames - 1
 			keyframe.matrix = Matrix.Translation(pos) @ rot.to_matrix().to_4x4()
 			keyframe.pos = keyframe.rot = True
+
+			# optional scale
+			has_scale = smd.jobType == ANIM and len(values) >= 10
+			if has_scale:
+				keyframe.matrix @= Matrix.Diagonal([float(values[7]), float(values[8]), float(values[9])]).to_4x4()
 			
 			# store the keyframe
 			frameIndex = int(values[0])
 			try:
 				bone = smd.a.pose.bones[ smd.boneIDs[frameIndex] ]
+				if has_scale: scaled_bones.add(bone)
 				if smd.jobType == REF and not bone.parent:
 					keyframe.matrix = getUpAxisMat(smd.upAxis) @ keyframe.matrix
 				keyframes[bone].append(keyframe)
@@ -445,6 +452,10 @@ class SmdImporter(bpy.types.Operator, Logger):
 						# Apply the phantom bone, then recurse
 						keyframes[bone][phantom_keyframe.frame].matrix = phantom_keyframes[phantom_parent][phantom_source_frame] @ keyframes[bone][phantom_keyframe.frame].matrix
 						phantom_parent = smd.phantomParentIDs.get(phantom_parent)
+		
+		for bone in scaled_bones:
+			for keyframe in keyframes[bone]:
+				keyframe.scale = True
 		
 		self.applyFrames(keyframes,num_frames)
 
@@ -597,6 +608,7 @@ class SmdImporter(bpy.types.Operator, Logger):
 					# Generate curves					
 					curvesLoc = None
 					curvesRot = None
+					curvesScale = None
 					bone_string = "pose.bones[\"{}\"].".format(bone.name)				
 					group = groups.new(name=bone.name)
 					
@@ -646,6 +658,19 @@ class SmdImporter(bpy.types.Operator, Logger):
 									curvesRot[i].keyframe_points.add(1)
 									curvesRot[i].keyframe_points[-1].co = [keyframe.frame, bone.rotation_quaternion[i]]
 
+						# Key scale
+						if keyframe.scale:
+							if curvesScale is None:
+								curvesScale = []
+								for i in range(3):
+									curve = fcurves.new(data_path=bone_string + "scale",index=i)
+									curve.group = group
+									curvesScale.append(curve)
+
+							for i in range(3):
+								curvesScale[i].keyframe_points.add(1)
+								curvesScale[i].keyframe_points[-1].co = [keyframe.frame, bone.scale[i]]
+
 				# Recurse
 				for child in bone.children:
 					ApplyRecursive(child)
@@ -663,6 +688,7 @@ class SmdImporter(bpy.types.Operator, Logger):
 			bone.location.zero()
 			if smd.rotMode == 'XYZ': bone.rotation_euler.zero()
 			else: bone.rotation_quaternion.identity()
+			bone.scale = (1,1,1)
 		scn = bpy.context.scene
 		
 		if scn.frame_current == 1: # Blender starts on 1, Source starts on 0
@@ -1731,7 +1757,8 @@ class SmdImporter(bpy.types.Operator, Logger):
 					
 					is_position_channel = channel["toAttribute"] == "position"
 					is_rotation_channel = channel["toAttribute"] == "orientation"
-					if not (is_position_channel or is_rotation_channel):
+					is_scale_channel = channel["toAttribute"] == "scale"
+					if not (is_position_channel or is_rotation_channel or is_scale_channel):
 						continue
 					
 					frame_log = channel["log"]["layers"][0]
@@ -1758,6 +1785,10 @@ class SmdImporter(bpy.types.Operator, Logger):
 						elif is_rotation_channel and not keyframe.rot:
 							keyframe.matrix @= getBlenderQuat(frame_value).to_matrix().to_4x4()
 							keyframe.rot = True
+						elif is_scale_channel and not keyframe.scale:
+							if isinstance(frame_value, (int, float)): frame_value = [frame_value] * 3
+							keyframe.matrix @= Matrix.Diagonal(list(frame_value)[:3]).to_4x4()
+							keyframe.scale = True
 				
 				if smd.a == None:
 					self.warning(get_id("importer_err_noanimationbones", True).format(smd.jobName))
