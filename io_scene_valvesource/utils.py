@@ -40,7 +40,7 @@ rz90n = Matrix.Rotation(radians(-90),4,'Z')
 
 mat_BlenderToSMD = ry90 @ rz90 # for legacy support only
 
-epsilon = Vector([0.0001] * 3)
+epsilon = Vector([0.000001] * 3)
 
 implicit_bone_name = "blender_implicit"
 
