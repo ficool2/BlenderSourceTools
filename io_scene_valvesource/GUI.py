@@ -21,7 +21,7 @@
 import bpy
 from .utils import *
 from .export_smd import SmdExporter, SMD_OT_Compile
-from .update import SmdToolsUpdate # comment this line if you make third-party changes
+#from .update import SmdToolsUpdate # comment this line if you make third-party changes
 from .flex import *
 
 vca_icon = 'EDITMODE_HLT'

@@ -46,7 +46,7 @@ for collection in [bpy.app.handlers.depsgraph_update_post, bpy.app.handlers.load
 		if func.__module__.startswith(__name__):
 			collection.remove(func)
 
-from . import datamodel, import_smd, export_smd, flex, GUI, update
+from . import datamodel, import_smd, export_smd, flex, GUI
 from .utils import *
 
 class ValveSource_Exportable(bpy.types.PropertyGroup):
@@ -221,8 +221,6 @@ _classes = (
 	flex.RenameShapesToMatchCorrectiveDrivers,
 	flex.ActiveDependencyShapes,
 	flex.InsertUUID,
-	update.SmdToolsUpdate,
-	update.SMD_MT_Updated,
 	export_smd.SMD_OT_Compile, 
 	export_smd.SmdExporter, 
 	import_smd.SmdImporter)
