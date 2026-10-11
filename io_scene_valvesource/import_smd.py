@@ -114,7 +114,8 @@ class SmdImporter(bpy.types.Operator, Logger):
 		return {'FINISHED'}
 
 	def invoke(self, context, event):
-		self.properties.upAxis = context.scene.vs.up_axis
+		if not self.properties.is_property_set("upAxis"):
+			self.properties.upAxis = context.scene.vs.up_axis
 		bpy.context.window_manager.fileselect_add(self)
 		return {'RUNNING_MODAL'}
 
