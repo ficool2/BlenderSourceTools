@@ -621,6 +621,9 @@ _data = {
 'importer_err_missingbones': {
 	'en': "{0} contains {1} bones not present in {2}. Check the console for a list.",
 },
+'importer_err_bonescale_reoriented': {
+	'en': "{0} has non-uniform scale on {1} bones that were re-oriented on import, which Blender can only approximate. Check the console for a list.",
+},
 'importer_err_noanimationbones': {
 	'en': "No bones imported for animation {0}",
 },

@@ -601,6 +601,13 @@ class SmdImporter(bpy.types.Operator, Logger):
 				for bone in still_bones:
 					keyframes[bone] = [keyframes[bone][0]]
 			
+			# TODO figure out if we can decompose/solve this somehow
+			inexact_scale_bones = []
+			def isInexactScale(bone, scale):
+				if max(scale) - min(scale) <= 0.0001:
+					return False
+				return any(0.0001 < abs(v) < 0.9999 for row in getSourceBoneRotation(bone.bone).to_3x3() for v in row)
+
 			# Create Blender keyframes
 			def ApplyRecursive(bone):
 				keys = keyframes.get(bone)
@@ -614,6 +621,10 @@ class SmdImporter(bpy.types.Operator, Logger):
 					
 					# Apply each imported keyframe
 					for keyframe in keys:
+						if keyframe.scale and bone.name not in inexact_scale_bones and isInexactScale(bone, keyframe.matrix.to_scale()):
+							inexact_scale_bones.append(bone.name)
+							print("- Bone \"{}\" has non-uniform scale that can only be approximated".format(bone.name))
+
 						# Transform
 						if smd.a.data.vs.legacy_rotation:
 							keyframe.matrix @= mat_BlenderToSMD.inverted()
@@ -682,6 +693,9 @@ class SmdImporter(bpy.types.Operator, Logger):
 			
 			for fc in fcurves:
 				fc.update()
+
+			if inexact_scale_bones:
+				self.warning(get_id("importer_err_bonescale_reoriented", True).format(smd.jobName, len(inexact_scale_bones)))
 
 		# clear any unkeyed poses
 		for bone in smd.a.pose.bones:
