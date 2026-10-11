@@ -783,7 +783,7 @@ class SmdExporter(bpy.types.Operator, Logger):
 			# - Object bone parent matricies are calculated from the head of the bone, NOT the tail (even though the tail defines the bone's location in pose mode!)
 			# - Bones are Y up, NOT Z up like everything else in Blender, and this affects their children's transforms
 			# To avoid this mess, we can use the bone and object world transforms to calculate a sane local matrix
-			result.bone_parent_matrix = armature.pose.bones[boneName].matrix.inverted() @ armature.matrix_world.inverted() @ id.matrix_world
+			result.bone_parent_matrix = getSourceBoneMatrix(armature.pose.bones[boneName]).inverted() @ armature.matrix_world.inverted() @ id.matrix_world
 
 		cur = id
 		while cur:
@@ -1079,11 +1079,11 @@ class SmdExporter(bpy.types.Operator, Logger):
 							parent = parent.parent
 				
 						# Get the bone's Matrix from the current pose
-						PoseMatrix = posebone.matrix
+						PoseMatrix = getSourceBoneMatrix(posebone)
 						if self.armature.data.vs.legacy_rotation:
 							PoseMatrix @= mat_BlenderToSMD 
 						if parent:
-							parentMat = parent.matrix
+							parentMat = getSourceBoneMatrix(parent)
 							if self.armature.data.vs.legacy_rotation: parentMat @= mat_BlenderToSMD 
 							PoseMatrix = parentMat.inverted() @ PoseMatrix
 							bone_scale = PoseMatrix.to_scale()
@@ -1401,9 +1401,9 @@ skeleton
 				cur_p = bone.parent
 				while cur_p and not cur_p in self.exportable_bones: cur_p = cur_p.parent
 				if cur_p:
-					relMat = cur_p.matrix.inverted() @ bone.matrix
+					relMat = getSourceBoneMatrix(cur_p).inverted() @ getSourceBoneMatrix(bone)
 				else:
-					relMat = self.armature.matrix_world @ bone.matrix
+					relMat = self.armature.matrix_world @ getSourceBoneMatrix(bone)
 			
 			trfm = makeTransform(bone_name,relMat,"bone"+bone_name)
 			trfm_base = makeTransform(bone_name,relMat,"bone_base"+bone_name)
@@ -2061,10 +2061,10 @@ skeleton
 					cur_p = bone.parent
 					while cur_p and not cur_p in evaluated_bones: cur_p = cur_p.parent
 					if cur_p:
-						relMat = cur_p.matrix.inverted() @ bone.matrix
+						relMat = getSourceBoneMatrix(cur_p).inverted() @ getSourceBoneMatrix(bone)
 						bone_scale = relMat.to_scale()
 					else:
-						relMat = self.armature.matrix_world @ bone.matrix
+						relMat = self.armature.matrix_world @ getSourceBoneMatrix(bone)
 						bone_scale = bone.matrix.to_scale() # don't pick up the armature object's scale
 					
 					pos = relMat.to_translation()

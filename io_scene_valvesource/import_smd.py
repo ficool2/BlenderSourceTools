@@ -56,7 +56,8 @@ class SmdImporter(bpy.types.Operator, Logger):
 	upAxis : EnumProperty(name="Up Axis",items=axes,default='Z',description=get_id("importer_up_tip"))
 	rotMode : EnumProperty(name=get_id("importer_rotmode"),items=( ('XYZ', "XYZ Euler", ''), ('QUATERNION', "Quaternion", "") ),default='XYZ',description=get_id("importer_rotmode_tip"))
 	rotModeBones : BoolProperty(name=get_id("importer_rotmode_bones"),description=get_id("importer_rotmode_bones_tip"),default=False)
-	boneMode : EnumProperty(name=get_id("importer_bonemode"),items=(('NONE','Default',''),('ARROWS','Arrows',''),('SPHERE','Sphere','')),default='SPHERE',description=get_id("importer_bonemode_tip"))
+	boneMode : EnumProperty(name=get_id("importer_bonemode"),items=(('NONE','Default',''),('ARROWS','Arrows',''),('SPHERE','Sphere',''),('CHILDREN','Point at Children','')),default='SPHERE',description=get_id("importer_bonemode_tip"))
+	armatureDisplay : EnumProperty(name=get_id("importer_armature_display"),items=(('STICK','Stick',''),('OCTAHEDRAL','Octahedral','')),default='STICK',description=get_id("importer_armature_display_tip"))
 	
 	def __init__(self, *args, **kwargs):
 		bpy.types.Operator.__init__(self, *args, **kwargs)
@@ -333,7 +334,7 @@ class SmdImporter(bpy.types.Operator, Logger):
 			ops.object.mode_set(mode='OBJECT',toggle=False)
 		a = bpy.data.objects.new(armature_name,bpy.data.armatures.new(armature_name))
 		a.show_in_front = True
-		a.data.display_type = 'STICK'
+		a.data.display_type = self.properties.armatureDisplay
 		bpy.context.scene.collection.objects.link(a)
 		for i in bpy.context.selected_objects: i.select_set(False) #deselect all objects
 		a.select_set(True)
@@ -427,6 +428,29 @@ class SmdImporter(bpy.types.Operator, Logger):
 		
 		self.applyFrames(keyframes,num_frames)
 
+	# Points new bones at their children. Returns the rotation from each bone's new orientation back to its Source one.
+	def pointBonesAtChildren(self, bones : list[bpy.types.EditBone], min_length : float) -> typing.Dict[str,Quaternion]:
+		source_rotations = {}
+		for bone in sorted(bones, key=lambda b: len(b.parent_recursive)): # importnant to do parents first
+			if bone.name in self.existingBones:
+				continue
+			source_matrix = bone.matrix.copy()
+
+			child_heads = [child.head for child in bone.children if (child.head - bone.head).length > min_length]
+			if child_heads:
+				tail = sum(child_heads, Vector()) / len(child_heads)
+				if (tail - bone.head).length <= min_length:
+					tail = child_heads[0]
+			elif bone.parent and bone.parent.length > min_length:
+				tail = bone.head + bone.parent.y_axis * bone.parent.length
+			else:
+				tail = bone.head + bone.y_axis * max(1, min_length * 30)
+
+			bone.tail = tail
+			bone.align_roll(source_matrix.col[2].to_3d())
+			source_rotations[bone.name] = (bone.matrix.inverted() @ source_matrix).to_quaternion()
+		return source_rotations
+
 	def applyFrames(self, keyframes : typing.Dict[bpy.types.PoseBone,list[KeyFrame]], num_frames : int):
 		smd = self.smd
 		assert(smd.a)
@@ -441,12 +465,12 @@ class SmdImporter(bpy.types.Operator, Logger):
 				if bone.name in self.existingBones:
 					continue
 				elif bone.parent and not keyframes.get(bone.parent):
-					bone.matrix = bone.parent.matrix @ kf[0].matrix
+					bone.matrix = getSourceBoneMatrix(bone.parent) @ kf[0].matrix
 				else:
 					bone.matrix = kf[0].matrix
 			ops.pose.armature_apply()
 
-			bone_vis = None if self.properties.boneMode == 'NONE' else bpy.data.objects.get("smd_bone_vis")
+			bone_vis = None if self.properties.boneMode in ['NONE','CHILDREN'] else bpy.data.objects.get("smd_bone_vis")
 			
 			if self.properties.boneMode == 'SPHERE' and (not bone_vis or bone_vis.type != 'MESH'):
 					ops.mesh.primitive_ico_sphere_add(subdivisions=3,radius=2)
@@ -479,12 +503,25 @@ class SmdImporter(bpy.types.Operator, Logger):
 		
 			# Apply spheres
 			ops.object.mode_set(mode='EDIT')
-			for bone in [smd.a.data.edit_bones[b.name] for b in keyframes.keys()]:
-				bone.tail = bone.head + (bone.tail - bone.head).normalized() * length # Resize loose bone tails based on armature size
+			edit_bones = [smd.a.data.edit_bones[b.name] for b in keyframes.keys()]
+			source_rotations = self.pointBonesAtChildren(edit_bones, length) if self.properties.boneMode == 'CHILDREN' else {}
+			for bone in edit_bones:
+				if self.properties.boneMode != 'CHILDREN':
+					bone.tail = bone.head + (bone.tail - bone.head).normalized() * length # Resize loose bone tails based on armature size
 				pose_bone = smd.a.pose.bones[bone.name]
 				pose_bone.custom_shape = bone_vis # apply bone shape
 				if self.properties.rotModeBones and bone.name not in self.existingBones:
 					pose_bone.rotation_mode = smd.rotMode
+
+			if source_rotations:
+				ops.object.mode_set(mode='OBJECT')
+				for name, rotation in source_rotations.items():
+					bone = smd.a.data.bones[name]
+					bone.vs.source_rotation = rotation
+
+					for child in smd.a.children:
+						if child.parent_type == 'BONE' and child.parent_bone == name:
+							child.matrix_parent_inverse = Matrix.Translation((0,-bone.length,0)) @ rotation.to_matrix().to_4x4() @ child.matrix_parent_inverse
 				
 		
 		if smd.jobType == ANIM:
@@ -546,9 +583,11 @@ class SmdImporter(bpy.types.Operator, Logger):
 						if smd.a.data.vs.legacy_rotation:
 							keyframe.matrix @= mat_BlenderToSMD.inverted()
 						
+						keyframe.matrix @= getSourceBoneRotation(bone.bone).inverted()
+						
 						if bone.parent:
-							if smd.a.data.vs.legacy_rotation: parentMat = bone.parent.matrix @ mat_BlenderToSMD
-							else: parentMat = bone.parent.matrix
+							parentMat = getSourceBoneMatrix(bone.parent)
+							if smd.a.data.vs.legacy_rotation: parentMat @= mat_BlenderToSMD
 							bone.matrix = parentMat @ keyframe.matrix
 						else:
 							bone.matrix = getUpAxisMat(smd.upAxis) @ keyframe.matrix
@@ -1584,7 +1623,8 @@ class SmdImporter(bpy.types.Operator, Logger):
 					ob.data.update()
 					ob.matrix_world @= matrix
 					if ob.parent_bone:
-						ob.matrix_world = ob.parent.matrix_world @ ob.parent.data.bones[ob.parent_bone].matrix_local @ ob.matrix_world
+						parent_bone = ob.parent.data.bones[ob.parent_bone]
+						ob.matrix_world = ob.parent.matrix_world @ parent_bone.matrix_local @ getSourceBoneRotation(parent_bone) @ ob.matrix_world
 					elif ob.parent:
 						ob.matrix_world = ob.parent.matrix_world @ ob.matrix_world
 					if smd.jobType == PHYS:

@@ -439,6 +439,12 @@ def getUpAxisMat(axis):
 	else:
 		raise AttributeError("getUpAxisMat got invalid axis argument '{}'".format(axis))
 
+def getSourceBoneRotation(bone : bpy.types.Bone) -> Matrix:
+	return bone.vs.source_rotation.to_matrix().to_4x4()
+
+def getSourceBoneMatrix(posebone : bpy.types.PoseBone) -> Matrix:
+	return posebone.matrix @ getSourceBoneRotation(posebone.bone)
+
 def MakeObjectIcon(object,prefix=None,suffix=None):
 	if not (prefix or suffix):
 		raise TypeError("A prefix or suffix is required")

@@ -31,7 +31,7 @@ bl_info = {
 }
 
 import bpy, os
-from bpy.props import StringProperty, BoolProperty, EnumProperty, IntProperty, CollectionProperty, FloatProperty, PointerProperty
+from bpy.props import StringProperty, BoolProperty, EnumProperty, IntProperty, CollectionProperty, FloatProperty, FloatVectorProperty, PointerProperty
 
 # Python doesn't reload package sub-modules at the same time as __init__.py!
 import importlib, sys
@@ -160,6 +160,9 @@ class ValveSource_ArmatureProps(PropertyGroup):
 	legacy_rotation : BoolProperty(name=get_id("bone_rot_legacy"),description=get_id("bone_rot_legacy_tip"),default=False)
 	export_bone_scale : BoolProperty(name=get_id("bone_scale"),description=get_id("bone_scale_tip"),default=False)
 
+class ValveSource_BoneProps(PropertyGroup):
+	source_rotation : FloatVectorProperty(name=get_id("bone_source_rotation"),description=get_id("bone_source_rotation_tip"),size=4,subtype='QUATERNION',default=(1,0,0,0))
+
 class ValveSource_CollectionProps(ExportableProps,PropertyGroup):
 	mute : BoolProperty(name=get_id("group_suppress"),description=get_id("group_suppress_tip"),default=False)
 	selected_item : IntProperty(default=-1, max=-1, min=-1)
@@ -192,6 +195,7 @@ _classes = (
 	ValveSource_VertexAnimation,
 	ValveSource_ObjectProps,
 	ValveSource_ArmatureProps,
+	ValveSource_BoneProps,
 	ValveSource_CollectionProps,
 	ValveSource_MeshProps,
 	ValveSource_SurfaceProps,
@@ -246,6 +250,7 @@ def register():
 	bpy.types.Scene.vs = make_pointer(ValveSource_SceneProps)
 	bpy.types.Object.vs = make_pointer(ValveSource_ObjectProps)
 	bpy.types.Armature.vs = make_pointer(ValveSource_ArmatureProps)
+	bpy.types.Bone.vs = make_pointer(ValveSource_BoneProps)
 	bpy.types.Collection.vs = make_pointer(ValveSource_CollectionProps)
 	bpy.types.Mesh.vs = make_pointer(ValveSource_MeshProps)
 	bpy.types.SurfaceCurve.vs = make_pointer(ValveSource_SurfaceProps)
@@ -270,6 +275,7 @@ def unregister():
 	del bpy.types.Scene.vs
 	del bpy.types.Object.vs
 	del bpy.types.Armature.vs
+	del bpy.types.Bone.vs
 	del bpy.types.Collection.vs
 	del bpy.types.Mesh.vs
 	del bpy.types.SurfaceCurve.vs

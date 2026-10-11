@@ -41,6 +41,12 @@ _data = {
 'shape_stereo_mode_tip': {
 	'en': "How stereo split balance should be defined",
 },
+'bone_source_rotation': {
+	'en': "Source rotation",
+},
+'bone_source_rotation_tip': {
+	'en': "Rotation from this bone to its orientation in Source",
+},
 'bone_rot_legacy': {
 	'en': "Legacy rotation",
 },
@@ -544,8 +550,14 @@ _data = {
 	'ja': "SMDのポリゴンと法線を保持",
 	'en': "Preserve SMD Polygons & Normals",
 },
+'importer_armature_display': {
+	'en': "Armature display",
+},
+'importer_armature_display_tip': {
+	'en': "How new Armatures should be drawn in the viewport",
+},
 'importer_bonemode_tip': {
-	'en': "How bones in new Armatures should be displayed",
+	'en': "How bones in new Armatures should be displayed. \"Point at Children\" re-orients bones into a connected skeleton",
 },
 'importer_bones_append': {
 	'ja': "対象で追加",
