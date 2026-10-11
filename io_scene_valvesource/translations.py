@@ -294,7 +294,7 @@ _data = {
 	'en': "Activate dependency shapes",
 },
 'settings_prop': {
-	'en': "Blender Source Tools settings",
+	'en': "Blender Source Tools++ settings",
 },
 'bl_info_description': {
 	'en': "Importer and exporter for Valve Software's Source Engine. Supports SMD\\VTA, DMX and QC.",
@@ -357,7 +357,7 @@ _data = {
 	'en': "Could not load flex controllers. Python reports: {0}",
 },
 'qc_compile_err_nofiles': {
-	'en': "Cannot compile, no QCs provided. The Blender Source Tools do not generate QCs.",
+	'en': "Cannot compile, no QCs provided. The Blender Source Tools++ do not generate QCs.",
 },
 'exporter_err_missing_corrective_target': {
 	'en': "Found corrective shape key \"{0}\", but not target shape \"{1}\"",

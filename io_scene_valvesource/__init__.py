@@ -19,7 +19,7 @@
 # ##### END GPL LICENSE BLOCK #####
 
 bl_info = {
-	"name": "Blender Source Tools",
+	"name": "Blender Source Tools++",
 	"author": "Tom Edwards, ficool2",
 	"version": (3, 5, 0),
 	"blender": (3, 1, 0),

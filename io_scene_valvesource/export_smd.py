@@ -287,7 +287,7 @@ class SmdExporter(bpy.types.Operator, Logger):
 		
 		subdir = id.vs.subdir
 		
-		print( "\nBlender Source Tools: exporting {}".format(id.name) )
+		print( "\nBlender Source Tools++: exporting {}".format(id.name) )
 				
 		subdir = subdir.lstrip("/") # don't want //s here!
 		
