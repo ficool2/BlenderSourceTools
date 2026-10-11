@@ -158,6 +158,7 @@ class ValveSource_ArmatureProps(PropertyGroup):
 	)
 	action_selection : EnumProperty(name=get_id("action_selection_mode"), items=arm_modes,description=get_id("action_selection_mode_tip"),default='CURRENT')
 	legacy_rotation : BoolProperty(name=get_id("bone_rot_legacy"),description=get_id("bone_rot_legacy_tip"),default=False)
+	export_bone_scale : BoolProperty(name=get_id("bone_scale"),description=get_id("bone_scale_tip"),default=False)
 
 class ValveSource_CollectionProps(ExportableProps,PropertyGroup):
 	mute : BoolProperty(name=get_id("group_suppress"),description=get_id("group_suppress_tip"),default=False)

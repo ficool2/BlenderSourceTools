@@ -60,6 +60,9 @@ axes = (('X','X',''),('Y','Y',''),('Z','Z',''))
 axes_lookup = { 'X':0, 'Y':1, 'Z':2 }
 axes_lookup_source2 = { 'X':1, 'Y':2, 'Z':3 }
 
+def hasBoneScale(scale):
+	return any(abs(s - 1) > 0.0001 for s in scale)
+
 class ExportFormat:
 	SMD = 1
 	DMX = 2

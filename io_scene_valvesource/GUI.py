@@ -478,6 +478,7 @@ class SMD_PT_Armature(ExportableConfigurationPanel):
 		if State.exportFormat == ExportFormat.SMD:
 			col.prop(armature.data.vs,"implicit_zero_bone")
 			col.prop(armature.data.vs,"legacy_rotation")
+		col.prop(armature.data.vs,"export_bone_scale")
 
 		if armature.animation_data and not State.useActionSlots:
 			col.template_ID(armature.animation_data, "action", new="action.new")

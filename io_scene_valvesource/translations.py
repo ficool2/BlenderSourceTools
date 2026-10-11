@@ -44,6 +44,12 @@ _data = {
 'bone_rot_legacy': {
 	'en': "Legacy rotation",
 },
+'bone_scale': {
+	'en': "Export bone scale",
+},
+'bone_scale_tip': {
+	'en': "Writes the scale of animated bones in this armature. Requires a model compiler and engine that support bone scale",
+},
 'controllers_advanced_tip': {
 	'en': "Insert the flex controllers of an existing DMX file",
 },

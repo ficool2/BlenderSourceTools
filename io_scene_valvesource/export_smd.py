@@ -1078,10 +1078,15 @@ class SmdExporter(bpy.types.Operator, Logger):
 							parentMat = parent.matrix
 							if self.armature.data.vs.legacy_rotation: parentMat @= mat_BlenderToSMD 
 							PoseMatrix = parentMat.inverted() @ PoseMatrix
+							bone_scale = PoseMatrix.to_scale()
 						else:
+							bone_scale = PoseMatrix.to_scale() # don't pick up the armature object's scale
 							PoseMatrix = self.armature.matrix_world @ PoseMatrix
 				
-						self.smd_file.write("{}  {}  {}\n".format(self.bone_ids[posebone.name], getSmdVec(PoseMatrix.to_translation()), getSmdVec(PoseMatrix.to_euler())))
+						if self.armature.data.vs.export_bone_scale and hasBoneScale(bone_scale):
+							self.smd_file.write("{}  {}  {}  {}\n".format(self.bone_ids[posebone.name], getSmdVec(PoseMatrix.to_translation()), getSmdVec(PoseMatrix.to_3x3().normalized().to_euler()), getSmdVec(bone_scale)))
+						else:
+							self.smd_file.write("{}  {}  {}\n".format(self.bone_ids[posebone.name], getSmdVec(PoseMatrix.to_translation()), getSmdVec(PoseMatrix.to_euler())))
 
 				self.smd_file.write("end\n")
 
@@ -2025,6 +2030,8 @@ skeleton
 			prev_rot = {}
 			skipped_pos = {}
 			skipped_rot = {}
+			export_bone_scale = self.armature.data.vs.export_bone_scale
+			bone_scales = {}
 
 			two_percent = num_frames / 50
 			print("Frames: ",debug_only=True,newline=False)
@@ -2040,15 +2047,21 @@ skeleton
 					while cur_p and not cur_p in evaluated_bones: cur_p = cur_p.parent
 					if cur_p:
 						relMat = cur_p.matrix.inverted() @ bone.matrix
+						bone_scale = relMat.to_scale()
 					else:
 						relMat = self.armature.matrix_world @ bone.matrix
+						bone_scale = bone.matrix.to_scale() # don't pick up the armature object's scale
 					
 					pos = relMat.to_translation()
 					if bone.parent:
 						for j in range(3): pos[j] *= armature_scale[j]
 					
-					rot = relMat.to_quaternion()
+					if export_bone_scale and hasBoneScale(bone_scale):
+						rot = relMat.to_3x3().normalized().to_quaternion()
+					else:
+						rot = relMat.to_quaternion()
 					rot_vec = Vector(rot.to_euler())
+					bone_scales.setdefault(bone.name, []).append((keyframe_time, bone_scale))
 
 					if not prev_pos.get(bone) or pos - prev_pos[bone] > epsilon:
 						skip_time = skipped_pos.get(bone)
@@ -2081,6 +2094,26 @@ skeleton
 				if two_percent and frame % two_percent:
 					print(".",debug_only=True,newline=False)
 			print(debug_only=True)
+
+			# Bone scale is an optional extension
+			for bone_name, scale_keys in bone_scales.items():
+				if not export_bone_scale or not any(hasBoneScale(scale) for time, scale in scale_keys):
+					continue
+
+				trfm = bone_elements[bone_name]["transform"]
+				trfm["scale"] = datamodel.Vector3(scale_keys[0][1])
+
+				channel_name = bone_name + "_s"
+				cur = dm.add_element(channel_name,"DmeChannel",id=channel_name)
+				cur["toAttribute"] = "scale"
+				cur["toElement"] = trfm
+				cur["mode"] = 1
+				val_arr = dm.add_element("Vector3 log","DmeVector3LogLayer",channel_name+"loglayer")
+				cur["log"] = dm.add_element("Vector3 log","DmeVector3Log",channel_name+"log")
+				cur["log"]["layers"] = datamodel.make_array([val_arr],datamodel.Element)
+				val_arr["times"] = datamodel.make_array([time for time, scale in scale_keys],datamodel.Time if dm.format_ver > 11 else int)
+				val_arr["values"] = datamodel.make_array([datamodel.Vector3(scale) for time, scale in scale_keys],datamodel.Vector3)
+				channels.append(cur)
 		
 		bpy.context.window_manager.progress_update(0.99)
 		print("- Writing DMX...")
