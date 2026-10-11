@@ -612,6 +612,7 @@ class SmdExporter(bpy.types.Operator, Logger):
 		model_mat = amod_ob.matrix_world.inverted() @ ob.matrix_world
 
 		num_verts = len(ob.data.vertices)
+		unweighted_verts = 0
 		for v in ob.data.vertices:
 			weights = []
 			total_weight = 0
@@ -655,7 +656,14 @@ class SmdExporter(bpy.types.Operator, Logger):
 				for link in weights:
 					link[1] *= amod_vg_weight
 
+			if not any(link[1] > 0 for link in weights):
+				unweighted_verts += 1
+
 			out.append(weights)
+
+		if unweighted_verts:
+			motionless = State.exportFormat == ExportFormat.DMX or amod_ob.data.vs.implicit_zero_bone
+			self.warning(get_id("exporter_warn_unweighted_implicit" if motionless else "exporter_warn_unweighted_root",True).format(unweighted_verts,bake_result.src.name))
 		return out
 		
 	def GetMaterialName(self, ob, material_index):

@@ -447,6 +447,12 @@ _data = {
 'exporter_err_makedirs': {
 	'en': "Could not create export folder. Python reports: {0}",
 },
+'exporter_warn_unweighted_implicit': {
+	'en': "{0} verts on \"{1}\" have no weights matching a bone in the skeleton. They will be attached to an implicit motionless bone.",
+},
+'exporter_warn_unweighted_root': {
+	'en': "{0} verts on \"{1}\" have no weights matching a bone in the skeleton. They will be attached to the first bone.",
+},
 'exporter_warn_weightlinks_excess': {
 	'en': "{0} verts on \"{1}\" have over {2} weight links. Source does not support this!",
 },
