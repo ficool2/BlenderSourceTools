@@ -54,7 +54,8 @@ class SmdImporter(bpy.types.Operator, Logger):
 		('NEW_ARMATURE',get_id("importer_bones_newarm"),get_id("importer_bones_newarm_desc"))),
 		default='APPEND')
 	upAxis : EnumProperty(name="Up Axis",items=axes,default='Z',description=get_id("importer_up_tip"))
-	rotMode : EnumProperty(name=get_id("importer_rotmode"),items=( ('XYZ', "Euler", ''), ('QUATERNION', "Quaternion", "") ),default='XYZ',description=get_id("importer_rotmode_tip"))
+	rotMode : EnumProperty(name=get_id("importer_rotmode"),items=( ('XYZ', "XYZ Euler", ''), ('QUATERNION', "Quaternion", "") ),default='XYZ',description=get_id("importer_rotmode_tip"))
+	rotModeBones : BoolProperty(name=get_id("importer_rotmode_bones"),description=get_id("importer_rotmode_bones_tip"),default=False)
 	boneMode : EnumProperty(name=get_id("importer_bonemode"),items=(('NONE','Default',''),('ARROWS','Arrows',''),('SPHERE','Sphere','')),default='SPHERE',description=get_id("importer_bonemode_tip"))
 	
 	def __init__(self, *args, **kwargs):
@@ -480,7 +481,10 @@ class SmdImporter(bpy.types.Operator, Logger):
 			ops.object.mode_set(mode='EDIT')
 			for bone in [smd.a.data.edit_bones[b.name] for b in keyframes.keys()]:
 				bone.tail = bone.head + (bone.tail - bone.head).normalized() * length # Resize loose bone tails based on armature size
-				smd.a.pose.bones[bone.name].custom_shape = bone_vis # apply bone shape
+				pose_bone = smd.a.pose.bones[bone.name]
+				pose_bone.custom_shape = bone_vis # apply bone shape
+				if self.properties.rotModeBones and bone.name not in self.existingBones:
+					pose_bone.rotation_mode = smd.rotMode
 				
 		
 		if smd.jobType == ANIM:

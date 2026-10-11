@@ -519,7 +519,13 @@ _data = {
 	'en': "Could not import shape keys: no valid target object found",
 },
 'importer_rotmode_tip': {
-	'en': "Determines the type of rotation Keyframes created when importing bones or animation",
+	'en': "Whether imported animations use XYZ Euler or Quaternion rotation Keyframes",
+},
+'importer_rotmode_bones': {
+	'en': "Apply Rotation Mode to New Bones",
+},
+'importer_rotmode_bones_tip': {
+	'en': "Set new bones to the chosen Rotation Mode when importing a mesh or skeleton, instead of leaving them as Quaternion",
 },
 'importer_skipremdoubles_tip': {
 	'en': "Import raw, disconnected polygons from SMD files; these are harder to edit but a closer match to the original mesh",
@@ -532,7 +538,7 @@ _data = {
 },
 'importer_rotmode': {
 	'ja': "回転モード",
-	'en': "Rotation mode",
+	'en': "Rotation Mode",
 },
 'importer_skipremdoubles': {
 	'ja': "SMDのポリゴンと法線を保持",
