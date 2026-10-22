@@ -28,6 +28,19 @@ from typing import cast
 from .utils import *
 from . import datamodel, ordered_set, flex
 
+if hasattr(bpy.types, "FileHandler"): # Blender 4.1+
+	class SMD_FH_Import(bpy.types.FileHandler):
+		bl_idname = "SMD_FH_import"
+		bl_label = "Source Engine import"
+		bl_import_operator = "import_scene.smd"
+		bl_file_extensions = ".smd;.vta;.dmx;.qc;.qci"
+
+		@classmethod
+		def poll_drop(cls, context):
+			return context.area is not None and context.area.type in {'VIEW_3D', 'OUTLINER'}
+else:
+	SMD_FH_Import = None
+
 class SmdImporter(bpy.types.Operator, Logger):
 	bl_idname = "import_scene.smd"
 	bl_label = get_id("importer_title")
@@ -38,9 +51,9 @@ class SmdImporter(bpy.types.Operator, Logger):
 	smd : SmdInfo
 
 	# Properties used by the file browser
-	filepath : StringProperty(name="File Path", description="File filepath used for importing the SMD/VTA/DMX/QC file", maxlen=1024, default="", options={'HIDDEN'})
-	files : CollectionProperty(type=bpy.types.OperatorFileListElement, options={'HIDDEN'})
-	directory : StringProperty(maxlen=1024, default="", subtype='FILE_PATH', options={'HIDDEN'})
+	filepath : StringProperty(name="File Path", description="File filepath used for importing the SMD/VTA/DMX/QC file", maxlen=1024, default="", subtype='FILE_PATH', options={'HIDDEN', 'SKIP_SAVE'})
+	files : CollectionProperty(type=bpy.types.OperatorFileListElement, options={'HIDDEN', 'SKIP_SAVE'})
+	directory : StringProperty(maxlen=1024, default="", subtype='DIR_PATH', options={'HIDDEN', 'SKIP_SAVE'})
 	filter_folder : BoolProperty(name="Filter Folders", description="", default=True, options={'HIDDEN'})
 	filter_glob : StringProperty(default="*.smd;*.vta;*.dmx;*.qc;*.qci", options={'HIDDEN'})
 
@@ -133,6 +146,9 @@ class SmdImporter(bpy.types.Operator, Logger):
 		prefs = self.getPreferences(context)
 		for name in self.saved_options if prefs else ():
 			setattr(self.properties, name, getattr(prefs, name))
+		if self.files and self.directory:
+			# drag n dropped
+			return self.execute(context)
 		self.save_options = True
 		bpy.context.window_manager.fileselect_add(self)
 		return {'RUNNING_MODAL'}

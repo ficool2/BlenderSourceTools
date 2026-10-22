@@ -243,6 +243,9 @@ _classes = (
 	export_smd.SmdExporter, 
 	import_smd.SmdImporter)
 
+if import_smd.SMD_FH_Import:
+	_classes += (import_smd.SMD_FH_Import,)
+
 def register():
 	for cls in _classes:
 		bpy.utils.register_class(cls)
