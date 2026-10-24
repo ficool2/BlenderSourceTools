@@ -411,7 +411,9 @@ class SmdImporter(bpy.types.Operator, Logger):
 			if smdContinue(line):
 				continue
 				
-			values = line.split()
+			values = line.split("#",1)[0].split("//",1)[0].split()
+			if not values:
+				continue
 
 			if values[0] == "time": # frame number is a dummy value, all frames are equally spaced
 				if num_frames > 0:
