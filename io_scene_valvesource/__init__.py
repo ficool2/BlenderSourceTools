@@ -21,7 +21,7 @@
 bl_info = {
 	"name": "Blender Source Tools++",
 	"author": "Tom Edwards, ficool2",
-	"version": (3, 5, 2),
+	"version": (3, 5, 3),
 	"blender": (3, 1, 0),
 	"category": "Import-Export",
 	"location": "File > Import/Export, Scene properties",
