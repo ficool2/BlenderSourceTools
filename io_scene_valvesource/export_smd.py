@@ -1440,6 +1440,33 @@ skeleton
 		for vca in bake_results[0].vertex_animations:
 			DmeModel_children.extend(writeBone("vcabone_{}".format(vca)))
 
+		# attachments
+		if self.armature:
+			for atch_ob in [child for child in self.armature.children if child.type == 'EMPTY' and child.name.startswith(attachment_prefix) and len(child.name) > len(attachment_prefix)]:
+				atch_name = atch_ob.name[len(attachment_prefix):]
+				DmeAttachment = dm.add_element(atch_name,"DmeAttachment",id="atch"+atch_name+"shape")
+				DmeAttachment["visible"] = True
+				DmeAttachment["isRigid"] = False
+				DmeAttachment["isWorldAligned"] = False
+
+				DmeDag = dm.add_element(atch_name,"DmeDag",id="atch"+atch_name+"dag")
+				DmeDag["shape"] = DmeAttachment
+				DmeDag["children"] = datamodel.make_array([],datamodel.Element)
+				if want_jointlist: jointList.append(DmeDag)
+
+				parent_bone = atch_ob.parent_bone if atch_ob.parent_type == 'BONE' else None
+				if parent_bone and parent_bone in bone_elements:
+					trfm_mat = getSourceBoneMatrix(self.armature.pose.bones[parent_bone]).inverted() @ self.armature.matrix_world.inverted() @ atch_ob.matrix_world
+					bone_elements[parent_bone]["children"].append(DmeDag)
+				else:
+					trfm_mat = atch_ob.matrix_world
+					DmeModel_children.append(DmeDag)
+
+				trfm = makeTransform(atch_name, trfm_mat, "atch"+atch_name)
+				if want_jointtransforms: jointTransforms.append(trfm)
+				DmeDag["transform"] = trfm
+				DmeModel_transforms.append(makeTransform(atch_name, trfm_mat, "atch_base"+atch_name))
+
 		DmeCombinationOperator = None
 		for _ in [bake for bake in bake_results if bake.shapes]:
 			if self.flex_controller_mode == 'ADVANCED':

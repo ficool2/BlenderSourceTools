@@ -1486,7 +1486,7 @@ class SmdImporter(bpy.types.Operator, Logger):
 
 					parent = getBoneForElement(parent) if parent else None
 					if elem.type == "DmeAttachment":
-						atch = smd.atch = bpy.data.objects.new(name=self.truncate_id_name(elem.name, "Attachment"), object_data=None)
+						atch = smd.atch = bpy.data.objects.new(name=self.truncate_id_name(attachment_prefix + elem.name, "Attachment"), object_data=None)
 						if smd.g:
 							smd.g.objects.link(atch)
 						else:

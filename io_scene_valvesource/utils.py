@@ -56,6 +56,8 @@ shape_types = ('MESH' , 'SURFACE', 'CURVE')
 exportable_types = list((*mesh_compatible, 'ARMATURE'))
 exportable_types = tuple(exportable_types)
 
+attachment_prefix = "attachment_"
+
 ###########################
 # backwards compat for <3.2
 _session_uid_attr = next((attr for attr in ("session_uid", "session_uuid") if attr in bpy.types.ID.bl_rna.properties), None)
