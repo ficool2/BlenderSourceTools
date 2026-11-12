@@ -1766,7 +1766,7 @@ class SmdImporter(bpy.types.Operator, Logger):
 				scale = timeFrame.get("scale",1.0)
 				duration = timeFrame.get("duration") or timeFrame.get("durationTime")
 				offset = timeFrame.get("offset") or timeFrame.get("offsetTime",0.0)
-				start = timeFrame.get("start", 0)
+				start = timeFrame.get("start", timeFrame.get("startTime", 0))
 				
 				if type(duration) == int: duration = datamodel.Time.from_int(duration)
 				if type(offset) == int: offset = datamodel.Time.from_int(offset)

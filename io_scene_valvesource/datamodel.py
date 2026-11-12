@@ -28,6 +28,7 @@ header_format_regex = header_format.replace("{:d}","([0-9]+)").replace("{:s}",r"
 
 header_proto2 = "<!-- DMXVersion binary_v{:d} -->"
 header_proto2_regex = header_proto2.replace("{:d}","([0-9]+)")
+header_legacy_regex = r"<!-- DMXVersion (keyvalues2)_v([0-9]+) -->"
 
 intsize = calcsize("i")
 shortsize = calcsize("H")
@@ -803,8 +804,14 @@ def load(path = None, in_file = None, element_path = None):
 			matches = re.findall(header_format_regex,header)
 			
 			if len(matches) != 1 or len(matches[0]) != 4:
+				legacy = re.findall(header_legacy_regex,header)
 				matches = re.findall(header_proto2_regex,header)
-				if len(matches) == 1 and len(matches[0]) == 1:
+				if len(legacy) == 1:
+					encoding = legacy[0][0]
+					encoding_ver = int(legacy[0][1])
+					format = "model"
+					format_ver = 1
+				elif len(matches) == 1 and len(matches[0]) == 1:
 					encoding = "binary_proto"
 					encoding_ver = int(matches[0][0])
 					format = "undefined_format"
